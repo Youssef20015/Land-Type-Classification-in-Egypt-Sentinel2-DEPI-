@@ -1,4 +1,6 @@
-# 🌍 Land-Type Classification in Egypt using Sentinel-2 Satellite Imagery
+# 🌍 GlobeClass
+
+#  Land-Type Classification in Egypt using Sentinel-2 Satellite Imagery
 
 A deep learning project for **land cover classification in Egypt** using **Sentinel-2 satellite imagery**. This project leverages computer vision and deep learning models to automatically classify different land types from satellite images, supporting environmental monitoring, urban planning, and agricultural analysis.
 
