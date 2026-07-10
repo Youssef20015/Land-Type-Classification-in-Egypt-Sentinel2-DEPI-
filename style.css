@@ -1,0 +1,443 @@
+/* ═══════════════════════════════════════════════════════
+   Celestial AI Lab — Custom Styles
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Base ─────────────────────────────────────────── */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Manrope', sans-serif;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+}
+
+/* ─── Glass Panel ──────────────────────────────────── */
+.glass-panel {
+    background: rgba(15, 20, 26, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ─── Scrollbar ────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(94, 180, 255, 0.15);
+    border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(94, 180, 255, 0.3);
+}
+
+/* ─── Globe Canvas ─────────────────────────────────── */
+#earth-canvas-container {
+    cursor: grab;
+}
+#earth-canvas-container:active {
+    cursor: grabbing;
+}
+
+/* ─── Navigation Links ─────────────────────────────── */
+.nav-link {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.875rem;
+    letter-spacing: -0.02em;
+    color: #64748b;
+    transition: color 0.2s ease;
+}
+.nav-link:hover {
+    color: #e2e8f0;
+}
+.nav-link.active {
+    color: #60a5fa;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 0.25rem;
+}
+
+/* ─── Sidebar Links ────────────────────────────────── */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: #64748b;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+.sidebar-link:hover {
+    background: rgba(30, 41, 59, 0.3);
+    color: #cbd5e1;
+}
+.sidebar-link.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border-right: 2px solid #3b82f6;
+}
+
+/* ─── Upload Zone States ───────────────────────────── */
+#upload-zone.drag-over {
+    border-color: #5eb4ff;
+    background: rgba(94, 180, 255, 0.05);
+    box-shadow: 0 0 40px rgba(94, 180, 255, 0.1) inset;
+}
+
+/* ─── Result Card Animation ────────────────────────── */
+#result-card.has-result {
+    border-color: rgba(94, 180, 255, 0.3);
+    background: rgba(94, 180, 255, 0.03);
+}
+
+/* ─── Breakdown Item ───────────────────────────────── */
+.breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+.breakdown-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.breakdown-item.top-result {
+    background: rgba(94, 180, 255, 0.08);
+    border: 1px solid rgba(94, 180, 255, 0.2);
+}
+
+.breakdown-bar-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.breakdown-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── History Item ─────────────────────────────────── */
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(68, 72, 79, 0.1);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(94, 180, 255, 0.15);
+}
+
+/* ─── Sample Thumbnail ─────────────────────────────── */
+.sample-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid rgba(68, 72, 79, 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+.sample-thumb:hover {
+    border-color: rgba(94, 180, 255, 0.4);
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(94, 180, 255, 0.15);
+}
+.sample-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sample-thumb .label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    padding: 2px 4px;
+    font-size: 8px;
+    text-align: center;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ─── Animations ───────────────────────────────────── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(94, 180, 255, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(94, 180, 255, 0.25);
+    }
+}
+
+.pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─── HUD Progress Bar Animation ───────────────────── */
+@keyframes progress-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.hud-bar-active {
+    animation: progress-shimmer 1.5s ease-in-out infinite;
+    background: linear-gradient(90deg, #5eb4ff, #2aa7ff, #15a4ff, #5eb4ff) !important;
+    background-size: 300% 100% !important;
+}
+
+@keyframes progress-fill {
+    0% { width: 5%; }
+    20% { width: 20%; }
+    40% { width: 45%; }
+    60% { width: 65%; }
+    80% { width: 80%; }
+    90% { width: 90%; }
+    100% { width: 95%; }
+}
+
+.hud-bar-filling {
+    animation: progress-fill 3s ease-out forwards, progress-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Responsive ───────────────────────────────────── */
+
+/* Tablet and below: hide sidebar, remove margin */
+@media (max-width: 1024px) {
+    #side-nav {
+        display: none;
+    }
+    main {
+        margin-left: 0 !important;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 768px) {
+    /* Navigation */
+    #top-nav {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        height: 56px;
+    }
+
+    /* Main content: full width, vertical scroll */
+    main {
+        padding-top: 56px !important;
+    }
+
+    /* Grid: stack everything vertically */
+    main .grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        padding: 0.75rem !important;
+        height: auto !important;
+        overflow-y: visible !important;
+    }
+
+    /* Globe / Satellite viewport — explicit height so Three.js canvas renders */
+    #viewport-container {
+        height: 50vh !important;
+        min-height: 50vh !important;
+        max-height: 50vh !important;
+        flex: none !important;
+    }
+
+    /* Ensure the Three.js canvas fills its container */
+    #earth-canvas-container,
+    #earth-canvas-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Hide decorative HUD overlays that clutter mobile */
+    #viewport-container .absolute.top-5.left-5.flex.flex-col.gap-1 {
+        display: none !important;
+    }
+
+    /* Zoom level panel: make smaller */
+    #viewport-container .absolute.top-5.right-5.glass-panel {
+        width: auto !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+    #viewport-container .absolute.top-5.right-5.glass-panel #zoom-level {
+        font-size: 1.25rem !important;
+    }
+
+    /* Bottom controls: stack vertically on mobile */
+    #viewport-container .absolute.bottom-5 {
+        left: 0.5rem !important;
+        right: 0.5rem !important;
+        bottom: 0.5rem !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: stretch !important;
+    }
+
+    /* Satellite button: smaller on mobile */
+    #btn-open-satellite,
+    #btn-capture-satellite {
+        font-size: 0.75rem !important;
+        padding: 0.5rem 1rem !important;
+        justify-content: center;
+    }
+
+    /* Selection overlay lens: smaller on mobile */
+    #selection-overlay {
+        width: 120px !important;
+        height: 120px !important;
+    }
+
+    /* Upload zone */
+    #upload-zone {
+        padding: 0.75rem !important;
+    }
+    #upload-zone .text-sm {
+        font-size: 0.75rem !important;
+    }
+
+    /* Results panel: full width */
+    .col-span-4 {
+        width: 100% !important;
+        overflow-y: visible !important;
+        padding-right: 0 !important;
+    }
+
+    /* Sample gallery: 3 columns on mobile instead of 5 */
+    #samples-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    /* Footer: relative instead of fixed, avoid covering content */
+    footer {
+        position: relative !important;
+        padding: 0.75rem 1rem !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        text-align: center;
+    }
+    footer .flex.gap-8 {
+        justify-content: center;
+    }
+
+    /* Map HUD on satellite mode */
+    #satellite-mode .absolute.bottom-5 {
+        left: 0.5rem !important;
+        right: 0.5rem !important;
+        bottom: 0.5rem !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: stretch !important;
+    }
+    #satellite-mode .absolute.top-5.left-5 {
+        left: 0.5rem !important;
+        top: 0.5rem !important;
+    }
+    #satellite-mode .absolute.top-5.right-5 {
+        right: 0.5rem !important;
+        top: 0.5rem !important;
+    }
+
+    /* Coordinate readout bar */
+    #selection-overlay .absolute.-top-10 {
+        font-size: 8px !important;
+        padding: 2px 6px !important;
+    }
+}
+
+/* Very small phones (< 400px) */
+@media (max-width: 400px) {
+    #viewport-container {
+        height: 40vh !important;
+        min-height: 40vh !important;
+        max-height: 40vh !important;
+    }
+    #selection-overlay {
+        width: 90px !important;
+        height: 90px !important;
+    }
+    #samples-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* --- Celestial Theme Variables (Void & Solar) -------- */
+:root {
+    --col-background: #f8f9ff;
+    --col-surface: #ffffff;
+    --col-surface-container-lowest: #ffffff;
+    --col-surface-container-low: #f1f3fc;
+    --col-surface-container: #e2e8f0;
+    --col-surface-container-high: #cbd5e1;
+    --col-surface-container-highest: #94a3b8;
+    --col-surface-variant: #e2e8f0;
+    --col-surface-bright: #ffffff;
+    --col-on-surface: #0a0e14;
+    --col-on-surface-variant: #44484f;
+    --col-primary: #0076c8;
+    --col-primary-dim: #008be5;
+    --col-primary-container: #5eb4ff;
+    --col-on-primary: #ffffff;
+    --col-outline: #72757d;
+    --col-outline-variant: #cbd5e1;
+    --col-error: #9f0519;
+}
+
+:root.dark, .dark {
+    --col-background: #0a0e14;
+    --col-surface: #0a0e14;
+    --col-surface-container-lowest: #000000;
+    --col-surface-container-low: #0f141a;
+    --col-surface-container: #151a21;
+    --col-surface-container-high: #1b2028;
+    --col-surface-container-highest: #20262f;
+    --col-surface-variant: #20262f;
+    --col-surface-bright: #262c36;
+    --col-on-surface: #f1f3fc;
+    --col-on-surface-variant: #a8abb3;
+    --col-primary: #5eb4ff;
+    --col-primary-dim: #15a4ff;
+    --col-primary-container: #2aa7ff;
+    --col-on-primary: #003151;
+    --col-outline: #72757d;
+    --col-outline-variant: #44484f;
+    --col-error: #ff716c;
+}
+
+html[dir="rtl"] {
+    font-size: 115%;
+}

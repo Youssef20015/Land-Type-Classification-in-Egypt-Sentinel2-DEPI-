@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GlobeClass | AI Land Cover Classification</title>
+    <meta name="description" content="GlobeClass — AI-powered satellite image classification. Zoom into Earth, view real satellite imagery, and classify land cover in real-time." />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet.js for satellite map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0a0e14" />
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "background":               "#0a0e14",
+                        "surface":                   "#0a0e14",
+                        "surface-container-low":     "#0f141a",
+                        "surface-container":         "#151a21",
+                        "surface-container-high":    "#1b2028",
+                        "surface-container-highest": "#20262f",
+                        "surface-variant":           "#20262f",
+                        "surface-bright":            "#262c36",
+                        "on-surface":                "#f1f3fc",
+                        "on-surface-variant":        "#a8abb3",
+                        "primary":                   "#5eb4ff",
+                        "primary-dim":               "#15a4ff",
+                        "primary-container":         "#2aa7ff",
+                        "on-primary":                "#003151",
+                        "outline":                   "#72757d",
+                        "outline-variant":           "#44484f",
+                        "error":                     "#ff716c",
+                    },
+                    fontFamily: {
+                        headline: ["Manrope", "sans-serif"],
+                        body:     ["Inter", "sans-serif"],
+                    },
+                },
+            },
+        };
+    </script>
+
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container/30">
+
+    <!-- ═══════════════ TOP NAV BAR ═══════════════ -->
+    <nav id="top-nav" class="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-14 md:h-16 bg-slate-950/60 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
+        <div class="flex items-center gap-4 md:gap-8">
+            <a href="/" class="text-xl font-bold tracking-tighter text-blue-400 font-headline hover:text-blue-300 transition-colors" data-i18n="nav-brand">GlobeClass</a>
+            <div class="hidden md:flex items-center gap-6">
+                <a class="nav-link" href="/" data-i18n="nav-explore">Explore</a>
+                <a class="nav-link active" href="/classify" data-i18n="nav-observatory">Observatory</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Install App / Download -->
+            <button id="pwa-install-btn" class="hidden items-center bg-surface-container-high border border-primary/20 text-primary px-3 py-1.5 rounded-lg font-bold text-xs hover:bg-primary/10 transition-all gap-1.5">
+                <span class="material-symbols-outlined text-sm">download</span> Install
+            </button>
+            <!-- Language Toggle -->
+            <div data-lang-toggle class="hidden md:flex"></div>
+            <div id="model-status-badge" class="hidden md:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider" data-i18n="cls-model-active">Model Active</span>
+            </div>
+            <!-- Mobile menu toggle -->
+            <button id="btn-mobile-menu" class="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-surface-container-high/60 border border-outline-variant/10 text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-xl">menu</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════ MOBILE TOOLBAR (visible on phones only) ═══════════════ -->
+    <div id="mobile-toolbar" class="md:hidden fixed top-14 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/30 overflow-hidden transition-all duration-300 ease-in-out" style="max-height: 0;">
+        <div class="p-3 space-y-3">
+            <!-- Mobile Search -->
+            <div class="relative">
+                <div class="flex bg-surface-container-high rounded-lg overflow-hidden border border-outline-variant/10 focus-within:border-primary/40 transition-colors">
+                    <span class="material-symbols-outlined text-slate-500 text-sm flex items-center pl-2.5">search</span>
+                    <input type="text" id="mobile-search-input" placeholder="Search any place..." class="w-full bg-transparent text-sm text-on-surface py-2.5 px-2 outline-none placeholder-slate-600" autocomplete="off" />
+                </div>
+                <div id="mobile-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-surface-container-high border border-outline-variant/20 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar"></div>
+            </div>
+            <!-- Mobile Coordinates -->
+            <div class="flex gap-2 items-end">
+                <div class="flex-1">
+                    <label class="text-[9px] text-slate-600 uppercase tracking-wider">Lat</label>
+                    <input type="number" id="mobile-coord-lat" step="any" min="-90" max="90" placeholder="30.0444" class="w-full bg-surface-container-high text-sm text-on-surface py-2 px-2.5 rounded-lg border border-outline-variant/10 outline-none focus:border-primary/40 transition-colors font-mono" />
+                </div>
+                <div class="flex-1">
+                    <label class="text-[9px] text-slate-600 uppercase tracking-wider">Lon</label>
+                    <input type="number" id="mobile-coord-lon" step="any" min="-180" max="180" placeholder="31.2357" class="w-full bg-surface-container-high text-sm text-on-surface py-2 px-2.5 rounded-lg border border-outline-variant/10 outline-none focus:border-primary/40 transition-colors font-mono" />
+                </div>
+                <button id="mobile-btn-go-coords" class="shrink-0 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-primary/20 text-primary text-xs font-bold hover:bg-primary/30 transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-sm">near_me</span> Go
+                </button>
+            </div>
+            <!-- Mobile Quick Actions -->
+            <div class="flex gap-2">
+                <button id="mobile-btn-my-location" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-blue-500/15 text-blue-400 text-xs font-bold hover:bg-blue-500/25 transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-sm">my_location</span> My Location
+                </button>
+                <button id="mobile-btn-satellite" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-sm">satellite_alt</span> Satellite
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SIDE NAV BAR ═══════════════ -->
+    <aside id="side-nav" class="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col w-64 bg-slate-900/40 backdrop-blur-md border-r border-slate-800/20 font-headline text-sm overflow-y-auto custom-scrollbar">
+        <div class="p-6 flex flex-col gap-2 border-b border-slate-800/20">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-blue-400 text-xl" style="font-variation-settings: 'FILL' 1;">psychology</span>
+                </div>
+                <div>
+                    <h3 class="text-blue-400 font-black text-base" data-i18n="cls-hud-title">Classification HUD</h3>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-500" id="sidebar-status" data-i18n="cls-hud-status-idle">AI Processing: Idle</p>
+                </div>
+            </div>
+            <!-- Animated processing bar -->
+            <div class="mt-2" id="hud-progress-container">
+                <div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-300" id="hud-progress-bar" style="width: 0%; background: linear-gradient(90deg, #5eb4ff, #2aa7ff, #5eb4ff); background-size: 200% 100%;"></div>
+                </div>
+                <p class="text-[9px] text-slate-600 mt-1" id="hud-progress-text" data-i18n="cls-hud-ready">Ready to classify</p>
+            </div>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="p-4 border-b border-slate-800/20">
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3" data-i18n="cls-view-mode">View Mode</p>
+            <div class="flex bg-surface-container-high rounded-lg p-1">
+                <button id="mode-globe" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-xs font-bold bg-primary/20 text-primary transition-all">
+                    <span class="material-symbols-outlined text-sm">public</span>
+                    <span data-i18n="cls-globe">Globe</span>
+                </button>
+                <button id="mode-satellite" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-xs font-bold text-slate-500 hover:text-slate-300 transition-all">
+                    <span class="material-symbols-outlined text-sm">satellite_alt</span>
+                    <span data-i18n="cls-satellite">Satellite</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Destination -->
+        <div class="p-4 border-b border-slate-800/20">
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2" data-i18n="cls-search-dest">Search Destination</p>
+            <div class="relative">
+                <div class="flex bg-surface-container-high rounded-lg overflow-hidden border border-outline-variant/10 focus-within:border-primary/40 transition-colors">
+                    <span class="material-symbols-outlined text-slate-500 text-sm flex items-center pl-2.5">search</span>
+                    <input type="text" id="search-input" data-i18n="cls-search-placeholder" placeholder="City, landmark, address..." class="w-full bg-transparent text-xs text-on-surface py-2.5 px-2 outline-none placeholder-slate-600" autocomplete="off" />
+                </div>
+                <!-- Search Results Dropdown -->
+                <div id="search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-surface-container-high border border-outline-variant/20 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar"></div>
+            </div>
+        </div>
+
+        <!-- Manual Coordinates -->
+        <div class="p-4 border-b border-slate-800/20">
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2" data-i18n="cls-go-to-coords">Go To Coordinates</p>
+            <div class="flex gap-2 mb-2">
+                <div class="flex-1">
+                    <label class="text-[9px] text-slate-600 uppercase tracking-wider">Lat</label>
+                    <input type="number" id="coord-lat" step="any" min="-90" max="90" placeholder="30.0444" class="w-full bg-surface-container-high text-xs text-on-surface py-1.5 px-2 rounded-lg border border-outline-variant/10 outline-none focus:border-primary/40 transition-colors font-mono" />
+                </div>
+                <div class="flex-1">
+                    <label class="text-[9px] text-slate-600 uppercase tracking-wider">Lon</label>
+                    <input type="number" id="coord-lon" step="any" min="-180" max="180" placeholder="31.2357" class="w-full bg-surface-container-high text-xs text-on-surface py-1.5 px-2 rounded-lg border border-outline-variant/10 outline-none focus:border-primary/40 transition-colors font-mono" />
+                </div>
+            </div>
+            <button id="btn-go-coords" class="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-sm">near_me</span>
+                <span data-i18n="cls-go-to-location">Go to Location</span>
+            </button>
+        </div>
+
+        <nav class="py-4">
+            <a class="sidebar-link active" href="#" data-section="hud">
+                <span class="material-symbols-outlined">radar</span>
+                <span data-i18n="cls-realtime-hud">Real-time HUD</span>
+            </a>
+            <a class="sidebar-link" href="#" data-section="upload">
+                <span class="material-symbols-outlined">cloud_upload</span>
+                <span data-i18n="cls-upload-image">Upload Image</span>
+            </a>
+            <a class="sidebar-link" href="#" data-section="samples">
+                <span class="material-symbols-outlined">photo_library</span>
+                <span data-i18n="cls-sample-gallery">Sample Gallery</span>
+            </a>
+        </nav>
+        <div class="p-6">
+            <div class="p-4 rounded-xl bg-slate-800/30 border border-slate-700/20">
+                <p class="text-[10px] uppercase tracking-widest text-slate-500 mb-2" data-i18n="cls-active-arch">Active Architecture</p>
+                <select id="model-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg text-[11px] py-2 px-3 text-on-surface focus:ring-primary focus:border-primary mb-3 outline-none">
+                    <option value="resnet50">ResNet50 (Standard)</option>
+                    <option value="swin">Swin Transformer</option>
+                    <option value="prithvi">Prithvi-EO 2.0</option>
+                </select>
+                <div id="active-model-info" class="space-y-1">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-primary font-bold" id="sidebar-model-name">ResNet50</p>
+                        <span class="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded" id="sidebar-model-acc">98.25%</span>
+                    </div>
+                    <p class="text-[9px] text-slate-500 leading-tight" id="sidebar-model-desc">Balanced performance and speed. RGB 64px input.</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <main class="md:ml-64 pt-16 min-h-screen relative bg-surface">
+        <div class="absolute inset-0 z-0 pointer-events-none opacity-40">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1b2028_0%,#0a0e14_100%)]"></div>
+        </div>
+
+        <div class="relative z-10 p-3 md:p-6 flex flex-col md:grid md:grid-cols-12 gap-4 md:gap-6 md:h-[calc(100vh-64px)] md:overflow-y-auto custom-scrollbar">
+
+            <!-- ═══════════════ LEFT: GLOBE + SATELLITE MAP ═══════════════ -->
+            <div class="w-full md:col-span-8 flex flex-col gap-4 md:gap-5">
+
+                <!-- Main Viewport Container -->
+                <div id="viewport-container" class="relative overflow-hidden rounded-xl border border-outline-variant/10 shadow-2xl flex-1 min-h-[45vh] md:min-h-[500px]">
+
+                    <!-- === THREE.JS GLOBE MODE === -->
+                    <div id="globe-mode" class="absolute inset-0 transition-opacity duration-700 z-10">
+                        <div class="w-full h-full relative bg-surface-container-low/30" id="earth-canvas-container"></div>
+
+                        <!-- Selection Lens -->
+                        <div class="absolute pointer-events-none w-48 h-48 border-2 border-primary-dim shadow-[0_0_30px_rgba(21,164,255,0.4)] flex flex-col items-center justify-center z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" id="selection-overlay">
+                            <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white"></div>
+                            <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white"></div>
+                            <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white"></div>
+                            <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white"></div>
+                            <div class="bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-mono text-primary-dim absolute -top-10 border border-primary/20 flex items-center gap-2 whitespace-nowrap">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                LAT: <span id="lat-val">30.0</span>° <span id="lat-dir">N</span> | LON: <span id="lon-val">31.0</span>° <span id="lon-dir">E</span>
+                            </div>
+                        </div>
+
+                        <!-- Globe HUD -->
+                        <div class="absolute top-5 left-5 flex flex-col gap-1 text-slate-500 font-mono text-[10px] uppercase tracking-widest pointer-events-none z-20">
+                            <div class="flex items-center gap-2"><span class="w-1 h-1 bg-primary rounded-full"></span> ResNet50 — 24M Params</div>
+                            <div class="flex items-center gap-2"><span class="w-1 h-1 bg-primary rounded-full"></span> Input: 64x64 RGB</div>
+                            <div class="flex items-center gap-2"><span class="w-1 h-1 bg-emerald-500 rounded-full"></span> <span id="device-label">Device: CPU</span></div>
+                        </div>
+
+                        <!-- Zoom Level (top right) -->
+                        <div class="absolute top-5 right-5 glass-panel rounded-xl border border-outline-variant/20 p-4 w-44 z-20">
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2">Zoom Level</p>
+                            <div class="flex items-baseline gap-2 mb-2">
+                                <span class="text-2xl font-headline font-extrabold text-on-surface" id="zoom-level">0%</span>
+                            </div>
+                            <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-primary to-primary-container h-full rounded-full transition-all duration-200" id="zoom-bar" style="width: 0%;"></div>
+                            </div>
+                            <p class="text-[9px] text-slate-600 mt-2" data-i18n="cls-scroll-hint">Scroll to zoom • Drag to rotate</p>
+                        </div>
+
+                        <!-- Bottom Controls -->
+                        <div class="absolute bottom-5 left-5 right-5 flex justify-between items-end z-20">
+                            <div class="glass-panel p-3 rounded-xl border border-outline-variant/20 flex gap-5">
+                                <div class="text-center">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold">Lat</p>
+                                    <p class="text-sm font-headline" id="lat-val-2">30.00°</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold">Lon</p>
+                                    <p class="text-sm font-headline" id="lon-val-2">31.00°</p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col items-end gap-2">
+                                <p id="capture-hint" class="text-[10px] text-slate-500 bg-slate-950/60 backdrop-blur px-3 py-1.5 rounded-lg border border-outline-variant/10">
+                                    <span class="material-symbols-outlined text-xs align-middle mr-1">mouse</span>
+                                    <span data-i18n="cls-capture-hint">Zoom to 100% or click globe to open satellite view</span>
+                                </p>
+                                <button id="btn-open-satellite" class="hidden bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 rounded-xl text-white font-bold shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all active:scale-95 flex items-center gap-2 pulse-glow">
+                                    <span class="material-symbols-outlined">satellite_alt</span>
+                                    <span data-i18n="cls-open-satellite">Open Live Satellite View</span>
+                                </button>
+                                <button id="btn-my-location" class="hidden bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 rounded-xl text-white font-bold shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all active:scale-95 flex items-center gap-2">
+                                    <span class="material-symbols-outlined">my_location</span>
+                                    <span data-i18n="cls-use-my-location">Use My Location</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- === SATELLITE MAP MODE (hidden by default) === -->
+                    <div id="satellite-mode" class="absolute inset-0 transition-opacity duration-700 opacity-0 pointer-events-none z-0">
+                        <!-- Leaflet Map -->
+                        <div id="satellite-map" class="w-full h-full"></div>
+
+                        <!-- Map HUD Overlay -->
+                        <div class="absolute top-5 left-5 z-[1000] flex flex-col gap-2 pointer-events-none">
+                            <div class="glass-panel rounded-xl border border-emerald-500/20 px-4 py-3 pointer-events-none">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest" data-i18n="cls-live-feed">Live Satellite Feed</span>
+                                </div>
+                                <p class="text-xs text-slate-400">ESRI World Imagery • Navigate to any location</p>
+                            </div>
+                        </div>
+
+                        <!-- Map Top Right Controls -->
+                        <div class="absolute top-5 right-5 z-[1000] flex flex-col gap-2">
+                            <button id="btn-back-globe" class="glass-panel px-4 py-2.5 rounded-xl border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-bright/50 transition-all flex items-center gap-2 active:scale-95">
+                                <span class="material-symbols-outlined text-sm">public</span>
+                                <span data-i18n="cls-back-globe">Back to Globe</span>
+                            </button>
+                        </div>
+
+                        <!-- Map Bottom Controls -->
+                        <div class="absolute bottom-5 left-5 right-5 z-[1000] flex justify-between items-end">
+                            <div class="glass-panel p-3 rounded-xl border border-outline-variant/20 flex gap-5">
+                                <div class="text-center">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold">Lat</p>
+                                    <p class="text-sm font-headline" id="map-lat">30.0000°</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold">Lon</p>
+                                    <p class="text-sm font-headline" id="map-lon">31.0000°</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold">Zoom</p>
+                                    <p class="text-sm font-headline" id="map-zoom">14</p>
+                                </div>
+                            </div>
+
+                            <button id="btn-capture-satellite" class="bg-gradient-to-r from-primary to-primary-container px-7 py-3 rounded-xl text-on-primary font-bold shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all active:scale-95 flex items-center gap-2 pulse-glow">
+                                <span class="material-symbols-outlined">photo_camera</span>
+                                <span data-i18n="cls-capture-classify">Capture &amp; Classify</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Transition Overlay -->
+                    <div id="transition-overlay" class="absolute inset-0 bg-surface z-30 pointer-events-none opacity-0 transition-opacity duration-500 flex items-center justify-center">
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="relative w-12 h-12">
+                                <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+                                <div class="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+                            </div>
+                            <p class="text-sm font-headline font-bold text-primary animate-pulse" id="transition-text">Switching to Satellite...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Zone (Secondary) -->
+                <div id="upload-zone" class="relative rounded-xl border-2 border-dashed border-outline-variant/20 hover:border-primary/50 transition-all duration-300 flex items-center justify-center px-6 py-4 cursor-pointer group bg-surface-container-low/10">
+                    <input type="file" id="file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" id="file-input-overlay" />
+
+                    <div id="upload-default" class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                            <span class="material-symbols-outlined text-primary text-xl">cloud_upload</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-headline font-bold text-on-surface" data-i18n="cls-upload-directly">Or upload a satellite image directly</p>
+                            <p class="text-xs text-slate-500" data-i18n="cls-upload-supports">Supports JPG, PNG • Resized to 64x64 internally</p>
+                        </div>
+                    </div>
+
+                    <div id="upload-preview" class="hidden flex items-center gap-5 w-full">
+                        <div class="w-20 h-20 rounded-lg overflow-hidden border border-primary/20 bg-black shrink-0">
+                            <img id="preview-image" class="w-full h-full object-cover" alt="Preview" />
+                        </div>
+                        <div class="flex-1 space-y-2">
+                            <p class="text-sm font-headline font-bold text-on-surface" id="preview-filename">image.jpg</p>
+                            <p class="text-xs text-slate-500" id="preview-size">-</p>
+                            <div class="flex gap-3">
+                                <button id="btn-classify" class="px-5 py-2 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-95 flex items-center gap-2 text-sm">
+                                    <span class="material-symbols-outlined text-sm">bolt</span> <span data-i18n="cls-classify">Classify</span>
+                                </button>
+                                <button id="btn-clear" class="px-3 py-2 bg-surface-container-high text-on-surface-variant rounded-lg hover:bg-surface-bright transition-all text-sm" data-i18n="cls-clear">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="upload-loading" class="hidden flex items-center gap-4">
+                        <div class="relative w-10 h-10">
+                            <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+                            <div class="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+                        </div>
+                        <p class="text-sm font-headline font-bold text-primary animate-pulse" data-i18n="cls-classifying">Classifying...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ RIGHT: RESULTS PANEL ═══════════════ -->
+            <div class="w-full md:col-span-4 flex flex-col gap-4 md:gap-5 md:overflow-y-auto pr-0 md:pr-1 custom-scrollbar">
+
+                <!-- Captured Image Preview -->
+                <section id="captured-preview-card" class="hidden p-5 rounded-xl glass-panel border border-primary/20 bg-primary/5 animate-fade-in-up">
+                    <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-primary/70 mb-3" data-i18n="cls-captured-img">Captured Satellite Image</h4>
+                    <div class="rounded-lg overflow-hidden border border-primary/20 mb-3">
+                        <img id="captured-image" class="w-full aspect-square object-cover" alt="Captured satellite" />
+                    </div>
+                    <div class="flex gap-3 text-[10px] text-slate-500">
+                        <span id="capture-coords">-</span>
+                    </div>
+                </section>
+
+                <!-- Primary Result Card -->
+                <section id="result-card" class="p-5 rounded-xl glass-panel border border-outline-variant/10 transition-all duration-500">
+                    <div id="result-empty" class="flex flex-col items-center justify-center py-6 text-center">
+                        <span class="material-symbols-outlined text-slate-600 text-5xl mb-3">satellite_alt</span>
+                        <p class="text-sm text-slate-500 font-headline" data-i18n="cls-empty-title">Zoom into Earth &amp; open satellite view</p>
+                        <p class="text-xs text-slate-600 mt-1" data-i18n="cls-empty-sub">Capture real satellite imagery to classify</p>
+                    </div>
+                    <div id="result-content" class="hidden">
+                        <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-primary/70 mb-3" data-i18n="cls-detected">Detected Land Cover</h4>
+                        <div class="flex items-end justify-between mb-3">
+                            <div>
+                                <div class="flex items-center gap-3 mb-1">
+                                    <span class="material-symbols-outlined text-3xl" id="result-icon" style="color: #10b981;">forest</span>
+                                    <span class="text-2xl font-headline font-extrabold tracking-tighter text-on-surface" id="result-label">-</span>
+                                </div>
+                                <p class="text-slate-400 text-xs" id="result-desc">-</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-mono text-primary font-bold" id="result-confidence">-</span>
+                                <p class="text-[10px] uppercase text-slate-500" data-i18n="cls-confidence">Confidence</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-primary to-primary-container transition-all duration-1000 ease-out rounded-full" id="result-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Full Breakdown -->
+                <section id="breakdown-card" class="hidden p-5 rounded-xl glass-panel border border-outline-variant/10">
+                    <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-slate-500 mb-3" data-i18n="cls-full-breakdown">Full Classification Breakdown</h4>
+                    <div class="space-y-2" id="breakdown-list"></div>
+                </section>
+
+                <!-- Chart -->
+                <section id="chart-card" class="hidden p-5 rounded-xl glass-panel border border-outline-variant/10">
+                    <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-slate-500 mb-3" data-i18n="cls-confidence-dist">Confidence Distribution</h4>
+                    <div class="h-44"><canvas id="confidence-chart"></canvas></div>
+                </section>
+
+                <!-- History -->
+                <section id="history-card" class="p-5 rounded-xl glass-panel border border-outline-variant/10">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-slate-500" data-i18n="cls-log">Classification Log</h4>
+                        <button id="btn-clear-history" class="text-[10px] text-slate-600 hover:text-primary transition-colors uppercase tracking-widest" data-i18n="cls-clear-log">Clear</button>
+                    </div>
+                    <div id="history-list" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-slate-600 text-center py-3" id="history-empty" data-i18n="cls-no-history">No classifications yet</p>
+                    </div>
+                </section>
+
+                <!-- Sample Gallery -->
+                <section id="samples-card" class="p-5 rounded-xl glass-panel border border-outline-variant/10">
+                    <h4 class="text-xs font-headline uppercase tracking-[0.2em] text-slate-500 mb-3" data-i18n="cls-quick-test">Quick Test — Sample Gallery</h4>
+                    <div class="grid grid-cols-3 md:grid-cols-5 gap-2" id="samples-grid">
+                        <div class="col-span-5 text-center py-3">
+                            <button id="btn-load-samples" class="text-xs text-primary hover:text-primary-dim transition-colors font-bold flex items-center gap-2 mx-auto">
+                                <span class="material-symbols-outlined text-sm">download</span>
+                                <span data-i18n="cls-load-samples">Load test samples from dataset</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full md:fixed md:bottom-0 z-50 py-3 px-4 md:px-8 flex flex-col md:flex-row justify-between items-center bg-slate-950/80 backdrop-blur-md border-t border-slate-900 font-headline text-[10px] uppercase tracking-widest gap-2 md:gap-0">
+        <span class="text-slate-700" data-i18n="cls-footer-copy">&copy; 2026 Abdelrahman Ehab — EuroSAT Land Cover Classification</span>
+        <div class="flex gap-8">
+            <span class="text-slate-600" id="footer-device">-</span>
+            <span class="text-slate-600" id="footer-classes" data-i18n="cls-10-classes">10 Classes</span>
+        </div>
+    </footer>
+
+    <script src="/static/js/i18n.js"></script>
+    <script src="/static/js/globe.js"></script>
+    <script src="/static/js/app.js"></script>
+
+    <!-- PWA Install Handling -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => {
+                    console.log('SW registration failed:', err);
+                });
+            });
+        }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+            installBtn.classList.add('flex');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.classList.add('hidden');
+                    installBtn.classList.remove('flex');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installBtn.classList.add('hidden');
+            installBtn.classList.remove('flex');
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>

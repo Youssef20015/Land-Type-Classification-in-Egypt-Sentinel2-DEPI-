@@ -1,0 +1,17 @@
+{
+    "name": "GlobeClass | AI Land Cover",
+    "short_name": "GlobeClass",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0e14",
+    "theme_color": "#0a0e14",
+    "description": "AI-powered satellite image classification using deep learning.",
+    "icons": [
+        {
+            "src": "/static/images/app-icon.png",
+            "sizes": "192x192 512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
